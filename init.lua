@@ -80,36 +80,17 @@ vim.opt.smartcase = true
 vim.opt.lazyredraw = true
 vim.opt.synmaxcol = 300
 
--- Custom function to create C++ template
+-- Custom function to create C++ template - FIXED VERSION
 function SetCPTemplate()
   local template = {
-    "#include <bits/stdc++.h>",
+    "#include <iostream>",
     "using namespace std;",
     "",
-    "#define int long long",
-    "#define MOD 1000000007",
-    "#define MAX 1e6",
-    "#define pb push_back",
-    "#define mp make_pair", 
-    "#define fi first",
-    "#define se second",
-    "#define all(x) (x).begin(), (x).end()",
-    "#define rall(x) (x).rbegin(), (x).rend()",
-    "",
-    "void solve() {",
-    "    // Your solution here",
-    "}",
-    "",
-    "int32_t main() {",
+    "int main() {",
     "    ios_base::sync_with_stdio(false);",
     "    cin.tie(NULL);",
     "    ",
-    "    int t = 1;",
-    "    cin >> t;",
-    "    ",
-    "    while (t--) {",
-    "        solve();",
-    "    }",
+    "    cout << \"hello\" << endl;",
     "    ",
     "    return 0;",
     "}",
@@ -117,8 +98,8 @@ function SetCPTemplate()
   
   -- Clear current buffer and insert template
   vim.api.nvim_buf_set_lines(0, 0, -1, false, template)
-  -- Move cursor to solve function
-  vim.api.nvim_win_set_cursor(0, {14, 4})
+  -- Move cursor to main function
+  vim.api.nvim_win_set_cursor(0, {7, 4})
 end
 
 -- Auto commands cho competitive programming
@@ -136,6 +117,17 @@ autocmd("FileType", {
     vim.opt_local.shiftwidth = 2
     vim.opt_local.tabstop = 2
     vim.opt_local.softtabstop = 2
+  end,
+})
+
+-- FIXED: Auto-insert template for new .cpp files
+autocmd("BufNewFile", {
+  pattern = "*.cpp",
+  callback = function()
+    -- Wait for buffer to be fully loaded
+    vim.defer_fn(function()
+      SetCPTemplate()
+    end, 10)
   end,
 })
 

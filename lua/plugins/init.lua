@@ -76,21 +76,29 @@ return {
     end,
   },
 
-  -- Competitive Programming plugins
+  -- FIXED: Competitive Programming plugins
   {
     "xeluxee/competitest.nvim",
     dependencies = { "MunifTanjim/nui.nvim" },
     config = function()
       require("competitest").setup({
-        template_file = {
-          cpp = "~/competitive-programming/template.cpp",
-        },
-        
+        -- Không cần template file
         testcases_directory = "./testcases",
         testcases_use_single_file = false,
         
+        -- FIXED: Compile command
         compile_command = {
-          cpp = { exec = "g++", args = {"-Wall", "-Wextra", "-Wpedantic", "-std=c++17", "-O2", "-o", "$(FNOEXT)", "$(FNAME)"} },
+          cpp = { 
+            exec = "g++", 
+            args = {
+              "-std=c++17", 
+              "-O2", 
+              "-Wall", 
+              "-o", 
+              "$(FNOEXT)", 
+              "$(FNAME)"
+            } 
+          },
         },
         
         running_directory = "./",
@@ -98,20 +106,67 @@ return {
           cpp = { exec = "./$(FNOEXT)" },
         },
         
+        -- FIXED: Test settings để hiển thị output
         multiple_testing = -1,
         maximum_time = 5000,
         
-        output_compare_method = "squish",
+        output_compare_method = "exact", -- Changed from "squish"
         view_output = true,
         
+        -- FIXED: UI configuration để hiển thị output rõ ràng
         popup_width = 0.8,
         popup_height = 0.8,
+        popup_ui = {
+          total_width = 0.8,
+          total_height = 0.8,
+          layout = {
+            { 2, "tc" },  -- Test cases
+            { 3, {        -- Output area - increased size
+                { 1, "so" },  -- Standard output
+                { 1, "eo" },  -- Expected output
+              },
+            },
+            { 2, {        -- Input and error area
+                { 1, "si" },  -- Standard input
+                { 1, "se" },  -- Standard error
+              },
+            },
+          },
+        },
         
         save_current_file = true,
         save_all_files = false,
         
+        -- FIXED: Companion settings
         companion_port = 27121,
         receive_print_message = true,
+        
+        -- Add default testcase if none exists
+        testcases_input_name = "input",
+        testcases_output_name = "output",
+      })
+      
+      -- FIXED: Auto-create default test case for simple programs
+      vim.api.nvim_create_autocmd("BufWritePost", {
+        pattern = "*.cpp",
+        callback = function()
+          local testcase_dir = vim.fn.getcwd() .. "/testcases"
+          if vim.fn.isdirectory(testcase_dir) == 0 then
+            vim.fn.mkdir(testcase_dir, "p")
+            
+            -- Create a simple test case for hello world programs
+            local input_file = testcase_dir .. "/" .. vim.fn.expand("%:t:r") .. "_input1.txt"
+            local output_file = testcase_dir .. "/" .. vim.fn.expand("%:t:r") .. "_output1.txt"
+            
+            if vim.fn.filereadable(input_file) == 0 then
+              vim.fn.writefile({""}, input_file)
+            end
+            
+            if vim.fn.filereadable(output_file) == 0 then
+              vim.fn.writefile({"hello"}, output_file)
+            end
+          end
+        end,
       })
     end,
     cmd = { "CompetiTest", "CompetiTestAdd", "CompetiTestEdit", "CompetiTestDelete" },
@@ -141,36 +196,20 @@ return {
       ls.add_snippets("cpp", {
         s("template", {
           t({
-            "#include <bits/stdc++.h>",
+            "#include <iostream>",
             "using namespace std;",
             "",
-            "#define int long long",
-            "#define MOD 1000000007",
-            "#define pb push_back",
-            "#define mp make_pair",
-            "#define all(x) (x).begin(), (x).end()",
-            "",
-            "void solve() {",
-            "    "
-          }),
-          i(1, "// Your code here"),
-          t({
-            "",
-            "}",
-            "",
-            "int32_t main() {",
+            "int main() {",
             "    ios_base::sync_with_stdio(false);",
             "    cin.tie(NULL);",
             "    ",
-            "    int t = 1;",
-            "    cin >> t;",
-            "    ",
-            "    while (t--) {",
-            "        solve();",
-            "    }",
-            "    ",
+            "    "
+          }),
+          i(1, "cout << \"hello\" << endl;"),
+          t({
+            "",
             "    return 0;",
-            "}"
+            "}",
           })
         }),
         
