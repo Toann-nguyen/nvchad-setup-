@@ -1,13 +1,9 @@
-require("nvchad.configs.lspconfig").defaults()
+local configs = require("nvchad.configs.lspconfig")
 local on_attach = configs.on_attach
 local on_init = configs.on_init
 local capabilities = configs.capabilities
 
 local lspconfig = require("lspconfig")
-
--- read :h vim.lsp.config for changing options of lsp servers 
-local servers = { "html", "cssls" }
-vim.lsp.enable(servers)
 
 -- Enhanced on_attach function for competitive programming
 local function cp_on_attach(client, bufnr)
@@ -33,16 +29,6 @@ local function cp_on_attach(client, bufnr)
   end, opts "NvRename")
   vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts "Code action")
   vim.keymap.set("n", "gr", vim.lsp.buf.references, opts "Show references")
-  
-  -- Format on save for C++ files
-  if client.supports_method("textDocument/formatting") then
-    vim.api.nvim_create_autocmd("BufWritePre", {
-      buffer = bufnr,
-      callback = function()
-        vim.lsp.buf.format({ async = false })
-      end,
-    })
-  end
 end
 
 -- Clangd configuration for competitive programming
@@ -89,7 +75,17 @@ lspconfig.clangd.setup({
   ),
 })
 
--- Additional LSP setup for better diagnostics
+-- Additional LSP servers
+local servers = { "html", "cssls" }
+for _, lsp in ipairs(servers) do
+  lspconfig[lsp].setup({
+    on_attach = on_attach,
+    on_init = on_init,
+    capabilities = capabilities,
+  })
+end
+
+-- Enhanced diagnostics configuration
 vim.diagnostic.config({
   virtual_text = {
     prefix = "●",
@@ -104,6 +100,3 @@ vim.diagnostic.config({
   update_in_insert = false,
   severity_sort = true,
 })
-
-
-

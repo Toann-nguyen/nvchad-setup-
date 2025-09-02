@@ -25,7 +25,6 @@ require("lazy").setup({
     end,
   },
 
-
   { import = "plugins" },
 }, lazy_config)
 
@@ -40,6 +39,7 @@ require "nvchad.autocmds"
 vim.schedule(function()
   require "mappings"
 end)
+
 -- Custom options cho competitive programming
 vim.opt.clipboard = "unnamedplus"
 vim.opt.cursorline = true
@@ -80,8 +80,46 @@ vim.opt.smartcase = true
 vim.opt.lazyredraw = true
 vim.opt.synmaxcol = 300
 
--- Load custom mappings
-require "configs.mappings"
+-- Custom function to create C++ template
+function SetCPTemplate()
+  local template = {
+    "#include <bits/stdc++.h>",
+    "using namespace std;",
+    "",
+    "#define int long long",
+    "#define MOD 1000000007",
+    "#define MAX 1e6",
+    "#define pb push_back",
+    "#define mp make_pair", 
+    "#define fi first",
+    "#define se second",
+    "#define all(x) (x).begin(), (x).end()",
+    "#define rall(x) (x).rbegin(), (x).rend()",
+    "",
+    "void solve() {",
+    "    // Your solution here",
+    "}",
+    "",
+    "int32_t main() {",
+    "    ios_base::sync_with_stdio(false);",
+    "    cin.tie(NULL);",
+    "    ",
+    "    int t = 1;",
+    "    cin >> t;",
+    "    ",
+    "    while (t--) {",
+    "        solve();",
+    "    }",
+    "    ",
+    "    return 0;",
+    "}",
+  }
+  
+  -- Clear current buffer and insert template
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, template)
+  -- Move cursor to solve function
+  vim.api.nvim_win_set_cursor(0, {14, 4})
+end
 
 -- Auto commands cho competitive programming
 local augroup = vim.api.nvim_create_augroup
