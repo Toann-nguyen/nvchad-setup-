@@ -82,9 +82,9 @@ return {
     dependencies = { "MunifTanjim/nui.nvim" },
     config = function()
       require("competitest").setup({
-        -- Không cần template file
+        -- Không sử dụng testcase files, chỉ dùng input trực tiếp
         testcases_directory = "./testcases",
-        testcases_use_single_file = false,
+        testcases_use_single_file = true,  -- Changed to true
         
         -- FIXED: Compile command
         compile_command = {
@@ -106,76 +106,83 @@ return {
           cpp = { exec = "./$(FNOEXT)" },
         },
         
-        -- FIXED: Test settings để hiển thị output
-        multiple_testing = -1,
+        -- FIXED: Test settings
+        multiple_testing = 1,  -- Changed to 1 for single test
         maximum_time = 5000,
         
-        output_compare_method = "exact", -- Changed from "squish"
+        output_compare_method = "squish",  -- Back to squish for flexible comparison
         view_output = true,
         
-        -- FIXED: UI configuration để hiển thị output rõ ràng
-        popup_width = 0.8,
-        popup_height = 0.8,
+        -- FIXED: UI configuration để có thể edit input trực tiếp
+        popup_width = 0.95,
+        popup_height = 0.95,
         popup_ui = {
-          total_width = 0.8,
-          total_height = 0.8,
+          total_width = 0.95,
+          total_height = 0.95,
           layout = {
-            { 2, "tc" },  -- Test cases
-            { 3, {        -- Output area - increased size
+            { 1, "tc" },  -- Test cases selection
+            { 4, {        -- Main content area
+                { 1, "si" },  -- Standard input (editable)
                 { 1, "so" },  -- Standard output
-                { 1, "eo" },  -- Expected output
               },
             },
-            { 2, {        -- Input and error area
-                { 1, "si" },  -- Standard input
+            { 3, {        -- Expected and error area
+                { 1, "eo" },  -- Expected output
                 { 1, "se" },  -- Standard error
               },
             },
           },
         },
         
+        -- Split UI configuration (alternative layout)
+        split_ui = {
+          position = "right",
+          relative_to_editor = true,
+          total_width = 0.5,
+          vertical_layout = {
+            { 1, "si" },  -- Input area (editable)
+            { 2, { { 1, "so" }, { 1, "eo" } } }, -- Output comparison
+            { 1, "se" },  -- Error area
+          },
+        },
+        
+        -- FIXED: Auto-save settings
         save_current_file = true,
         save_all_files = false,
         
-        -- FIXED: Companion settings
+        -- Companion settings
         companion_port = 27121,
         receive_print_message = true,
         
-        -- Add default testcase if none exists
+        -- FIXED: Testcase naming
         testcases_input_name = "input",
         testcases_output_name = "output",
+        
+        -- FIXED: Editor integration
+        editor_ui = {
+          editor_split_horizontal = false,
+          editor_split_vertical = true,
+        },
       })
       
-      -- FIXED: Auto-create default test case for simple programs
-      vim.api.nvim_create_autocmd("BufWritePost", {
-        pattern = "*.cpp",
-        callback = function()
-          local testcase_dir = vim.fn.getcwd() .. "/testcases"
-          if vim.fn.isdirectory(testcase_dir) == 0 then
-            vim.fn.mkdir(testcase_dir, "p")
-            
-            -- Create a simple test case for hello world programs
-            local input_file = testcase_dir .. "/" .. vim.fn.expand("%:t:r") .. "_input1.txt"
-            local output_file = testcase_dir .. "/" .. vim.fn.expand("%:t:r") .. "_output1.txt"
-            
-            if vim.fn.filereadable(input_file) == 0 then
-              vim.fn.writefile({""}, input_file)
-            end
-            
-            if vim.fn.filereadable(output_file) == 0 then
-              vim.fn.writefile({"hello"}, output_file)
-            end
-          end
-        end,
-      })
+      -- FIXED: Remove auto-create testcase files - use direct input instead
+      -- No autocmd needed for file-based testcases
     end,
-    cmd = { "CompetiTest", "CompetiTestAdd", "CompetiTestEdit", "CompetiTestDelete" },
+    cmd = { "CompetiTest", "CompetiTestAdd", "CompetiTestEdit", "CompetiTestDelete", "CompetiTestRun" },
     keys = {
-      { "<F5>", "<cmd>CompetiTest run<cr>", desc = "Run tests" },
-      { "<leader>rr", "<cmd>CompetiTest run<cr>", desc = "Run tests" },
+      { "<F5>", function()
+        -- Auto save before running
+        vim.cmd("w")
+        vim.cmd("CompetiTest run")
+      end, desc = "Save and run tests" },
+      { "<leader>rr", function()
+        vim.cmd("w")
+        vim.cmd("CompetiTest run")
+      end, desc = "Save and run tests" },
       { "<leader>rt", "<cmd>CompetiTest add_testcase<cr>", desc = "Add test case" },
       { "<leader>re", "<cmd>CompetiTest edit_testcase<cr>", desc = "Edit test case" },
       { "<leader>rd", "<cmd>CompetiTest delete_testcase<cr>", desc = "Delete test case" },
+      { "<leader>ro", "<cmd>CompetiTest show_ui<cr>", desc = "Show test UI" },
     },
   },
 

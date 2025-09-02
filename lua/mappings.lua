@@ -65,8 +65,21 @@ end, { desc = "Insert CP template" })
 -- Quick save
 map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>", { desc = "Save file" })
 
--- Additional competitive programming keymaps
-map("n", "<leader>rr", "<cmd>CompetiTest run<cr>", { desc = "Run tests" })
+-- Additional competitive programming keymaps  
+map("n", "<leader>rr", function()
+  vim.cmd("w")
+  vim.cmd("CompetiTest run")
+end, { desc = "Save and run tests" })
+
 map("n", "<leader>rt", "<cmd>CompetiTest add_testcase<cr>", { desc = "Add test case" })
 map("n", "<leader>re", "<cmd>CompetiTest edit_testcase<cr>", { desc = "Edit test case" })
 map("n", "<leader>rd", "<cmd>CompetiTest delete_testcase<cr>", { desc = "Delete test case" })
+map("n", "<leader>ro", "<cmd>CompetiTest show_ui<cr>", { desc = "Show/Open test UI" })
+
+-- FIXED: Simple F5 mapping for direct input testing
+map("n", "<F5>", function()
+  -- Save file first
+  vim.cmd("w")
+  -- Run test with UI where you can input directly
+  vim.cmd("CompetiTest run")
+end, { desc = "Save and run with direct input" })
