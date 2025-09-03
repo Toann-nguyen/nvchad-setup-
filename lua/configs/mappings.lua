@@ -35,18 +35,20 @@ map("n", "<F9>", function()
   
   if ext == "cpp" then
     vim.cmd("!clear")
-    local compile_cmd = string.format("g++ -std=c++17 -O2 -Wall -Wextra -o %s %s", filename, vim.fn.expand("%"))
+    local compile_cmd = string.format("g++ -std=c++17 -O2 -Wall -o %s %s", filename, vim.fn.expand("%"))
     vim.cmd("!" .. compile_cmd)
     
     if vim.v.shell_error == 0 then
-      vim.cmd("split | terminal ./" .. filename)
+      vim.cmd("split | terminal ./" .. filename)  -- Giữ nguyên
+      vim.cmd("resize 15")  -- Thêm: Làm split cao 15 dòng cho dễ nhập
+      vim.cmd("startinsert")  -- Thêm: Auto vào insert mode để nhập ngay
     else
       vim.notify("Compilation failed!", vim.log.levels.ERROR)
     end
   else
     vim.notify("Not a C++ file!", vim.log.levels.WARN)
   end
-end, { desc = "Compile and run C++" })
+end, { desc = "Compile and run C++ directly" })
 
 -- Quick save and basic shortcuts
 map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>", { desc = "Save file" })

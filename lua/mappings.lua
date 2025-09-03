@@ -53,6 +53,44 @@ map("n", "<F9>", function()
   end
 end, { desc = "Compile and run C++ directly" })
 
+-- NEW: F6 for compile and run with manual input in CompetiTest UI
+map("n", "<F6>", function()
+  vim.cmd("w")
+  local filename = vim.fn.expand("%:r")
+  local ext = vim.fn.expand("%:e")
+  
+  if ext == "cpp" then
+    -- Compile the file
+    local compile_cmd = string.format("g++ -std=c++17 -O2 -Wall -o %s %s 2>&1", filename, vim.fn.expand("%"))
+    local compile_result = vim.fn.system(compile_cmd)
+    
+    if vim.v.shell_error == 0 then
+      -- Prompt user to input manually
+      vim.ui.input({ prompt = "Enter input for the program: " }, function(input)
+        if input then
+          -- Create a temporary input file or pass input directly
+          local tmp_input = vim.fn.tempname() .. ".txt"
+          vim.fn.writefile(vim.split(input, "\n"), tmp_input)
+          
+          -- Run CompetiTest with custom input
+          vim.cmd("CompetiTest run --input " .. tmp_input)
+          
+          -- Cleanup temporary file
+          vim.defer_fn(function()
+            vim.fn.delete(tmp_input)
+          end, 1000)
+        else
+          vim.notify("No input provided, skipping run.", vim.log.levels.WARN)
+        end
+      end)
+    else
+      vim.notify("Compilation failed:\n" .. compile_result, vim.log.levels.ERROR)
+    end
+  else
+    vim.notify("Not a C++ file!", vim.log.levels.WARN)
+  end
+end, { desc = "Compile and run with manual input in UI" })
+
 -- Template insertion
 map("n", "<leader>cc", function()
   if SetCPTemplate then

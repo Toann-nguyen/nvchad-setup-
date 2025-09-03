@@ -6,13 +6,13 @@
 local M = {}
 -- Base46 theme configuration
 M.base46 = {
-  theme = "tokyonight",
+  theme = "embark",
   transparency = false,
   hl_add = {},
   hl_override = {},
   integrations = { "cmp", "telescope", "treesitter", "mason" },
   changed_themes = {},
-  theme_toggle = { "tokyonight", "one_light" },
+  theme_toggle = { "embark", "one_light" },
 }
 
 -- UI configuration
