@@ -6,6 +6,13 @@ local M = {}
 -- Treesitter configuration
 M.treesitter = {
   ensure_installed = {
+    "php",          -- Hỗ trợ PHP
+    "javascript",   -- Hỗ trợ JS (React)
+    "typescript",   -- Hỗ trợ TS (NextJS)
+    "tsx",          -- Hỗ trợ TSX (React/NextJS)
+    "html",         -- Hỗ trợ HTML
+    "css",          -- Hỗ trợ CSS
+    "json",
     "c",
     "cpp",
     "lua",

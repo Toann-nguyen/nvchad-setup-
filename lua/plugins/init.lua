@@ -4,6 +4,18 @@
 local overrides = require("configs.overrides")
 
 return {
+  -- Telescope setup với tag 0.1.8
+  {
+    "nvim-telescope/telescope.nvim",
+    tag = '0.1.8',  -- Tag ổn định từ GitHub
+    dependencies = { 
+      'nvim-lua/plenary.nvim'  -- Dependency bắt buộc
+    },
+    cmd = "Telescope",
+    config = function()
+      require("telescope").setup({})
+    end,
+  },
   -- Core plugins cần override
   {
     "nvim-treesitter/nvim-treesitter",
@@ -28,6 +40,37 @@ return {
     opts = overrides.cmp,
   },
 
+  -- Telescope setup
+  {
+    "nvim-telescope/telescope.nvim",
+    cmd = "Telescope",
+    dependencies = {
+      "nvim-lua/plenary.nvim", -- Dependency bắt buộc
+      {
+        "nvim-telescope/telescope-fzf-native.nvim", -- Tùy chọn, tăng tốc độ tìm kiếm
+        build = "make", -- Compile với make
+        cond = function()
+          return vim.fn.executable("make") == 1 -- Kiểm tra make có sẵn
+        end,
+      },
+    },
+    config = function()
+      local telescope = require("telescope")
+      telescope.setup({
+        defaults = {
+          mappings = {
+            i = {
+              ["<C-j>"] = require("telescope.actions").move_selection_next,
+              ["<C-k>"] = require("telescope.actions").move_selection_previous,
+            },
+          },
+        },
+      })
+      -- Load extension fzf nếu có
+      pcall(require("telescope").load_extension, "fzf")
+    end,
+  },
+
   -- Code formatting - Fixed configuration
   {
     "stevearc/conform.nvim",
@@ -36,10 +79,14 @@ return {
       formatters_by_ft = {
         cpp = { "clang-format" },
         c = { "clang-format" },
+        php = { "php-cs-fixer" },
         lua = { "stylua" },
         python = { "isort", "black" },
         javascript = { "prettier" },
         typescript = { "prettier" },
+        tsx = { "prettier" },
+        html = { "prettier" },
+        css = { "prettier" },
         json = { "prettier" },
         yaml = { "prettier" },
         markdown = { "prettier" },
@@ -73,6 +120,57 @@ return {
       vim.keymap.set({ "n", "v" }, "<leader>fm", function()
         require("conform").format({ lsp_fallback = true })
       end, { desc = "Format files" })
+    end,
+  },
+
+  -- PHP/Laravel support
+  {
+    "phpactor/phpactor",
+    ft = "php",
+    build = "composer install --no-dev",
+    config = function()
+      require("phpactor").setup()
+    end,
+  },
+  -- Frontend support (ReactJS, NextJS, HTML/CSS)
+  {
+    "mxsdev/nvim-dap-vscode-js",
+    ft = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
+    config = function()
+      require("dap-vscode-js").setup({
+        debugger_path = vim.fn.stdpath("data") .. "/mason/packages/js-debug-adapter",
+      })
+    end,
+  },
+
+  {
+    "jose-elias-alvarez/null-ls.nvim",
+    config = function()
+      local null_ls = require("null-ls")
+      null_ls.setup({
+        sources = {
+          null_ls.builtins.formatting.prettier.with({
+            filetypes = { "javascript", "typescript", "css", "html", "json" },
+          }),
+        },
+      })
+    end,
+  },
+
+  {
+    "MunifTanjim/prettier.nvim",
+    ft = { "javascript", "typescript", "css", "html", "json" },
+    config = function()
+      require("prettier").setup()
+    end,
+  },
+
+  -- Telescope cho tìm kiếm
+  {
+    "nvim-telescope/telescope.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    config = function()
+      require("telescope").setup()
     end,
   },
 
