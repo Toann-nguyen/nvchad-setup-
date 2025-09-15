@@ -4,6 +4,45 @@
 local overrides = require("configs.overrides")
 
 return {
+  -- THÊM: Snacks.nvim (required cho pickers provider mặc định của laravel.nvim)
+  {
+    "folke/snacks.nvim",
+    lazy = true,
+    dependencies = {
+      "nvim-treesitter/nvim-treesitter",
+      "nvim-lua/plenary.nvim",
+    },
+    opts = {
+      -- Default config from repo (brief)
+      ui = {
+        border = "rounded",
+      },
+    },
+  },
+  -- THÊM: Dependencies cho laravel.nvim (nui, plenary, nio đã có; thêm vim-dotenv và mcphub optional)
+  {
+    "tpope/vim-dotenv",  -- Required cho .env completions
+    event = "VeryLazy",
+  },
+  {
+    "nvim-neotest/nvim-nio",  -- Required cho async
+    lazy = true,
+  },
+  {
+    "ravitemer/mcphub.nvim",  -- Optional cho mcphub integration (skip nếu không cần)
+    lazy = true,
+  },
+
+  -- THÊM: adalessa/laravel.nvim (verbatim từ README, với opts lsp_server = "intelephense" để match config bạn)
+  {
+    "adalessa/laravel.nvim",
+    dependencies = {
+      "tpope/vim-dotenv",
+      "MunifTanjim/nui.nvim",
+      "nvim-lua/plenary.nvim",
+      "nvim-neotest/nvim-nio",
+      "ravitemer/mcphub.nvim", -- optional
+    },
   -- Telescope setup với tag 0.1.8
   {
     "nvim-telescope/telescope.nvim",
@@ -39,7 +78,83 @@ return {
     "hrsh7th/nvim-cmp",
     opts = overrides.cmp,
   },
-
+    cmd = { "Laravel" },
+    keys = {
+      { "<leader>ll", function() Laravel.pickers.laravel() end,              desc = "Laravel: Open Laravel Picker" },
+      { "<c-g>",      function() Laravel.commands.run("view:finder") end,    desc = "Laravel: Open View Finder" },
+      { "<leader>la", function() Laravel.pickers.artisan() end,              desc = "Laravel: Open Artisan Picker" },
+      { "<leader>lt", function() Laravel.commands.run("actions") end,        desc = "Laravel: Open Actions Picker" },
+      { "<leader>lr", function() Laravel.pickers.routes() end,               desc = "Laravel: Open Routes Picker" },
+      { "<leader>lh", function() Laravel.run("artisan docs") end,            desc = "Laravel: Open Documentation" },
+      { "<leader>lm", function() Laravel.pickers.make() end,                 desc = "Laravel: Open Make Picker" },
+      { "<leader>lc", function() Laravel.pickers.commands() end,             desc = "Laravel: Open Commands Picker" },
+      { "<leader>lo", function() Laravel.pickers.resources() end,            desc = "Laravel: Open Resources Picker" },
+      { "<leader>lp", function() Laravel.commands.run("command_center") end, desc = "Laravel: Open Command Center" },
+      {
+        "gf",
+        function()
+          local ok, res = pcall(function()
+            if Laravel.app("gf").cursorOnResource() then
+              return "<cmd>lua Laravel.commands.run('gf')<cr>"
+            end
+          end)
+          if not ok or not res then
+            return "gf"
+          end
+          return res
+        end,
+        expr = true,
+        noremap = true,
+      },
+    },
+    event = { "VeryLazy" },
+    opts = {
+      lsp_server = "intelephense", -- "phpactor | intelephense" (match config bạn)
+      features = {
+        pickers = {
+          provider = "snacks", -- "snacks | telescope | fzf-lua | ui-select" (mặc định snacks)
+        },
+      },
+    },
+  },
+-- THÊM: Laravel.nvim (load cho PHP/Blade, dependencies plenary đã có)
+  {
+    "adibhanna/laravel.nvim",
+    ft = { "php", "blade" },  -- Lazy load cho file PHP/Blade
+    dependencies = {
+      "nvim-telescope/telescope.nvim",  -- Đã có, cho route/view finder
+      "nvim-lua/plenary.nvim",         -- Đã có
+      "nvim-treesitter/nvim-treesitter", -- Đã có, cho parsing
+    },
+    config = function()
+      require("laravel").setup({
+        -- Config mặc định từ docs (có thể customize sau)
+        root_dir = {
+          "composer.json",
+          ".git",
+          "artisan",
+        },
+        -- Enable dump viewer (tự động capture dump()/dd())
+        dump = {
+          enable = true,
+          open = "current",  -- Mở dump viewer trong buffer hiện tại
+        },
+        -- Artisan/Composer integration
+        artisan = {
+          bin = "php artisan",  -- Hoặc "sail artisan" nếu dùng Sail
+        },
+        composer = {
+          bin = "composer",
+        },
+        -- Autocompletion cache (30s như docs)
+        cache = {
+          ttl = 30,
+        },
+      })
+      -- Đăng ký commands/keymaps tự động từ plugin
+    end,
+    cmd = { "Artisan", "Composer", "LaravelMake", "LaravelRoute", "LaravelStatus" },  -- Commands chính
+  },
   -- Telescope setup
   {
     "nvim-telescope/telescope.nvim",

@@ -114,6 +114,13 @@ map("n", "<leader>re", "<cmd>CompetiTest edit_testcase<cr>", { desc = "Edit test
 map("n", "<leader>rd", "<cmd>CompetiTest delete_testcase<cr>", { desc = "Delete test case" })
 map("n", "<leader>ro", "<cmd>CompetiTest show_ui<cr>", { desc = "Show/Open test UI" })
 
+-- THÊM: Extra Laravel keymaps (từ features: Tinker, dump server, dev server)
+map("n", "<leader>ln", function() Laravel.extensions.tinker.ui() end, { desc = "Laravel: Open Tinker UI" })
+map("n", "<leader>ld", function() Laravel.extensions.dump_server.toggle() end, { desc = "Laravel: Toggle Dump Server" })
+map("n", "<leader>ls", function() Laravel.extensions.dev_server.start() end, { desc = "Laravel: Start Dev Server" })
+map("n", "<leader>lS", function() Laravel.extensions.dev_server.stop() end, { desc = "Laravel: Stop Dev Server" })
+
+-- Override gf
 -- FIXED: Simple F5 mapping for direct input testing
 map("n", "<F5>", function()
   -- Save file first

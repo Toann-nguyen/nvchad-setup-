@@ -52,6 +52,8 @@ M.mason = {
     -- Formatters
     "clang-format",
     
+    "php-cs-fixer",
+    "intelephense",
     -- Debug adapters
     "cpptools",
   },
@@ -143,6 +145,7 @@ M.cmp = function()
           luasnip = "[Snippet]",
           buffer = "[Buffer]",
           path = "[Path]",
+          laravel = "[Laravel]",  -- THÊM: Menu cho Laravel completions
         })[entry.source.name]
         
         return vim_item
@@ -181,6 +184,7 @@ M.cmp = function()
     },
     
     sources = {
+      { name = "laravel", priority = 900 },  -- THÊM: Laravel source (routes, views, configs, env, model columns)
       { name = "nvim_lsp", priority = 1000 },
       { name = "luasnip", priority = 750 },
       { name = "buffer", priority = 500 },

@@ -31,6 +31,25 @@ local function cp_on_attach(client, bufnr)
   vim.keymap.set("n", "gr", vim.lsp.buf.references, opts "Show references")
 end
 
+-- THÊM: Intelephense cho PHP/Laravel (ưu tiên cho autocompletion facades/routes)
+lspconfig.intelephense.setup({
+  on_attach = cp_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  settings = {
+    intelephense = {
+      environment = {
+        includePaths = { "vendor" },  -- Để nhận Laravel vendor libs
+      },
+      files = {
+        maxSize = 500000,
+      },
+    },
+  },
+  filetypes = { "php" },
+  root_dir = lspconfig.util.root_pattern("composer.json", ".git"),
+})
+
 -- Clangd configuration for competitive programming
 lspconfig.clangd.setup({
   on_attach = cp_on_attach,

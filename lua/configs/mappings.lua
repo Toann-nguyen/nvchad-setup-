@@ -64,6 +64,8 @@ map("n", "<C-l>", "<C-w>l", { desc = "Switch window right" })
 map("n", "<C-j>", "<C-w>j", { desc = "Switch window down" })
 map("n", "<C-k>", "<C-w>k", { desc = "Switch window up" })
 
+-- larravel
+map("n", "<leader>Ld", "<cmd>LaravelDumps<cr>", { desc = "Open Laravel dump viewer" })
 -- Format shortcuts
 map("n", "<leader>fm", function()
   local conform = require("conform")
