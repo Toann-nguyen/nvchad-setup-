@@ -80,6 +80,8 @@ vim.opt.smartcase = true
 vim.opt.lazyredraw = true
 vim.opt.synmaxcol = 300
 
+vim.opt.incsearch = true -- Highlight khi tìm kiếm
+vim.opt.hlsearch = true -- Giữ highlight sau khi tìm
 -- Custom function to create C++ template - FIXED VERSION
 function SetCPTemplate()
   local template = {

@@ -13,6 +13,26 @@ map({ "n", "v" }, "<C-v>", '"+p', { desc = "Paste from system clipboard" })
 map("i", "<C-v>", "<C-r>+", { desc = "Paste from system clipboard (insert)" })
 map("n", "<leader>ca", "ggVG\"+y", { desc = "Copy entire buffer to clipboard" })
 
+-- In ~/.config/nvim/lua/mappings.lua
+map("n", "<C-v>", '"+p', { desc = "Paste from system clipboard in Normal mode" })
+map("v", "<C-v>", '"+p', { desc = "Paste from system clipboard in Visual mode" })
+
+-- Laravel shortcuts under <leader>l
+map("n", "<leader>lc", ":Telescope find_files cwd=app/Http/Controllers<CR>", opts)  -- Controller
+map("n", "<leader>ls", ":Telescope find_files cwd=app/Services<CR>", opts)          -- Service
+map("n", "<leader>lr", ":Telescope find_files cwd=app/Repositories<CR>", opts)      -- Repository
+map("n", "<leader>lR", ":Telescope find_files cwd=app/Http/Resources<CR>", opts)    -- Resource
+map("n", "<leader>lq", ":Telescope find_files cwd=app/Http/Requests<CR>", opts)     -- Request
+map("n", "<leader>lm", ":Telescope find_files cwd=app/Http/Middleware<CR>", opts)   -- Middleware
+map("n", "<leader>lo", ":Telescope find_files cwd=app/Http/Responses<CR>", opts)    -- Response
+map("n", "<leader>lp", ":Telescope find_files cwd=app/Policies<CR>", opts)          -- Policy
+
+-- LSP vẫn giữ nguyên (tránh conflict)
+map("n", "gd", vim.lsp.buf.definition, opts)
+map("n", "gD", vim.lsp.buf.declaration, opts)
+map("n", "gi", vim.lsp.buf.implementation, opts)
+map("n", "gr", vim.lsp.buf.references, opts)
+-- Remove the { "n", "v" } combined mapping
 -- Competitive programming shortcuts
 map("n", "<leader>cc", function()
   if SetCPTemplate then
@@ -64,6 +84,8 @@ map("n", "<C-l>", "<C-w>l", { desc = "Switch window right" })
 map("n", "<C-j>", "<C-w>j", { desc = "Switch window down" })
 map("n", "<C-k>", "<C-w>k", { desc = "Switch window up" })
 
+-- fix visual mode in vscode
+map({ "n", "v" }, "<C-v>", '"+p', { desc = "Paste from system clipboard" })
 -- larravel
 map("n", "<leader>Ld", "<cmd>LaravelDumps<cr>", { desc = "Open Laravel dump viewer" })
 -- Format shortcuts

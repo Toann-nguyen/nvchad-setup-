@@ -4,6 +4,88 @@
 local overrides = require("configs.overrides")
 
 return {
+  {
+  'mrcjkb/rustaceanvim',
+  version = '^6', -- Recommended
+  lazy = false, -- This plugin is already lazy
+   config = function()
+    local mason_registry = require("mason-registry")
+
+    -- Lấy package codelldb từ mason
+    local codelldb = mason_registry.get_package("codelldb")
+    local extension_path = codelldb:get_install_path() .. "/extension/"
+    local codelldb_path = extension_path .. "adapter/codelldb"
+    local liblldb_path = extension_path .. "lldb/lib/liblldb.so"
+    -- nếu Ubuntu/Linux thì đổi lại:
+    -- local liblldb_path = extension_path .. "lldb/lib/liblldb.so"
+    
+    -- local liblldb_path = extension_path .. "lldb/lib/liblldb.so"  -- Linux
+    -- local liblldb_path = extension_path .. "lldb/bin/liblldb.dll" -- Windows
+
+    local cfg = require("rustaceanvim.config")
+
+    vim.g.rustaceanvim = {
+      dap = {
+        adapter = cfg.get_codelldb_adapter(codelldb_path, liblldb_path),
+      },
+    }
+  end,
+},
+{
+    'rust-lang/rust.vim',
+    ft = "rust",
+    init = function ()
+      vim.g.rustfmt_autosave = 1
+    end
+  },
+
+-- Core DAP
+{
+  "mfussenegger/nvim-dap",
+   config = function()
+			local dap, dapui = require("dap"), require("dapui")
+      dap.listeners.before.attach.dapui_config = function()
+        dapui.open()
+      end
+      dap.listeners.before.launch.dapui_config = function()
+        dapui.open()
+      end
+      dap.listeners.before.event_terminated.dapui_config = function()
+        dapui.close()
+      end
+      dap.listeners.before.event_exited.dapui_config = function()
+        dapui.close()
+      end
+		end,
+},
+
+-- UI cho DAP
+{
+  "rcarriga/nvim-dap-ui",
+  dependencies = {
+    "mfussenegger/nvim-dap",
+    "nvim-neotest/nvim-nio",
+  },
+  config = function()
+    require("dapui").setup()
+  end,
+},
+  {
+    'saecki/crates.nvim',
+    ft = {"toml"},
+    config = function()
+      require("crates").setup {
+        completion = {
+          cmp = {
+            enabled = true
+          },
+        },
+      }
+      require('cmp').setup.buffer({
+        sources = { { name = "crates" }}
+      })
+    end
+  },
   -- THÊM: Snacks.nvim (required cho pickers provider mặc định của laravel.nvim)
   {
     "folke/snacks.nvim",
@@ -23,6 +105,15 @@ return {
   {
     "tpope/vim-dotenv",  -- Required cho .env completions
     event = "VeryLazy",
+    config = function()
+    -- Mapping tương tự Ctrl+D của VSCode
+    vim.g.multi_cursor_use_default_mapping = false -- Tắt default mappings
+    vim.g.multi_cursor_start_word_key = '<C-d>' -- Map Ctrl+D để chọn từ tiếp theo
+    vim.g.multi_cursor_next_key = '<C-d>' -- Ctrl+D để thêm cursor tiếp theo
+    vim.g.multi_cursor_prev_key = '<C-p>' -- Ctrl+P để quay lại (tùy chọn)
+    vim.g.multi_cursor_skip_key = '<C-x>' -- Ctrl+X để skip occurrence
+    vim.g.multi_cursor_quit_key = '<Esc>' -- Thoát multiple cursors
+  end,
   },
   {
     "nvim-neotest/nvim-nio",  -- Required cho async
@@ -476,6 +567,7 @@ return {
         max_length = 0,
         silent = false,
         trim = false,
+        notification = true,  -- Thêm: Hiển thị notify nếu copy fail
       }
     end,
   },
