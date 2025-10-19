@@ -1,15 +1,15 @@
+-- ~/.config/nvim/lua/configs/lspconfig.lua
 local configs = require("nvchad.configs.lspconfig")
 local on_attach = configs.on_attach
 local on_init = configs.on_init
 local capabilities = configs.capabilities
 
 local lspconfig = require("lspconfig")
-
--- Enhanced on_attach function for competitive programming
-local function cp_on_attach(client, bufnr)
+lspconfig.pyright.setup{}
+-- Enhanced on_attach function
+local function enhanced_on_attach(client, bufnr)
   on_attach(client, bufnr)
   
-  -- Additional keymaps for competitive programming
   local function opts(desc)
     return { buffer = bufnr, desc = "LSP " .. desc }
   end
@@ -18,11 +18,6 @@ local function cp_on_attach(client, bufnr)
   vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts "Go to definition")
   vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts "Go to implementation")
   vim.keymap.set("n", "<leader>sh", vim.lsp.buf.signature_help, opts "Show signature help")
-  vim.keymap.set("n", "<leader>wa", vim.lsp.buf.add_workspace_folder, opts "Add workspace folder")
-  vim.keymap.set("n", "<leader>wr", vim.lsp.buf.remove_workspace_folder, opts "Remove workspace folder")
-  vim.keymap.set("n", "<leader>wl", function()
-    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-  end, opts "List workspace folders")
   vim.keymap.set("n", "<leader>D", vim.lsp.buf.type_definition, opts "Go to type definition")
   vim.keymap.set("n", "<leader>ra", function()
     require("nvchad.lsp.renamer")()
@@ -31,15 +26,154 @@ local function cp_on_attach(client, bufnr)
   vim.keymap.set("n", "gr", vim.lsp.buf.references, opts "Show references")
 end
 
--- THÊM: Intelephense cho PHP/Laravel (ưu tiên cho autocompletion facades/routes)
+-- ========== REACT/TYPESCRIPT LSP SETUP ==========
+
+-- TypeScript/JavaScript (tsserver)
+lspconfig.ts_ls.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  settings = {
+    typescript = {
+      inlayHints = {
+        includeInlayParameterNameHints = "all",
+        includeInlayParameterNameHintsWhenArgumentMatchesName = true,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayEnumMemberValueHints = true,
+      },
+    },
+    javascript = {
+      inlayHints = {
+        includeInlayParameterNameHints = "all",
+        includeInlayParameterNameHintsWhenArgumentMatchesName = true,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayEnumMemberValueHints = true,
+      },
+    },
+  },
+  filetypes = {
+    "javascript",
+    "javascriptreact",
+    "javascript.jsx",
+    "typescript",
+    "typescriptreact",
+    "typescript.tsx",
+  },
+})
+
+-- Tailwind CSS
+lspconfig.tailwindcss.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  filetypes = {
+    "html",
+    "css",
+    "scss",
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "vue",
+  },
+  settings = {
+    tailwindCSS = {
+      classAttributes = { "class", "className", "classList", "ngClass" },
+      lint = {
+        cssConflict = "warning",
+        invalidApply = "error",
+        invalidConfigPath = "error",
+        invalidScreen = "error",
+        invalidTailwindDirective = "error",
+        invalidVariant = "error",
+        recommendedVariantOrder = "warning",
+      },
+      validate = true,
+    },
+  },
+})
+
+-- CSS
+lspconfig.cssls.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  settings = {
+    css = {
+      validate = true,
+      lint = {
+        unknownAtRules = "ignore",
+      },
+    },
+    scss = {
+      validate = true,
+      lint = {
+        unknownAtRules = "ignore",
+      },
+    },
+    less = {
+      validate = true,
+      lint = {
+        unknownAtRules = "ignore",
+      },
+    },
+  },
+})
+
+-- HTML
+lspconfig.html.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  filetypes = { "html", "htmldjango" },
+})
+
+-- JSON
+lspconfig.jsonls.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  settings = {
+    json = {
+      schemas = require("schemastore").json.schemas(),
+      validate = { enable = true },
+    },
+  },
+})
+
+-- ESLint
+lspconfig.eslint.setup({
+  on_attach = function(client, bufnr)
+    enhanced_on_attach(client, bufnr)
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      buffer = bufnr,
+      command = "EslintFixAll",
+    })
+  end,
+  on_init = on_init,
+  capabilities = capabilities,
+  settings = {
+    workingDirectory = { mode = "auto" },
+  },
+})
+
+-- ========== END REACT/TYPESCRIPT SETUP ==========
+
+-- PHP/Laravel (Intelephense)
 lspconfig.intelephense.setup({
-  on_attach = cp_on_attach,
+  on_attach = enhanced_on_attach,
   on_init = on_init,
   capabilities = capabilities,
   settings = {
     intelephense = {
       environment = {
-        includePaths = { "vendor" },  -- Để nhận Laravel vendor libs
+        includePaths = { "vendor" },
       },
       files = {
         maxSize = 500000,
@@ -50,9 +184,9 @@ lspconfig.intelephense.setup({
   root_dir = lspconfig.util.root_pattern("composer.json", ".git"),
 })
 
--- Clangd configuration for competitive programming
+-- C/C++ (Clangd)
 lspconfig.clangd.setup({
-  on_attach = cp_on_attach,
+  on_attach = enhanced_on_attach,
   on_init = on_init,
   capabilities = capabilities,
   
@@ -94,16 +228,6 @@ lspconfig.clangd.setup({
   ),
 })
 
--- Additional LSP servers
-local servers = { "html", "cssls" }
-for _, lsp in ipairs(servers) do
-  lspconfig[lsp].setup({
-    on_attach = on_attach,
-    on_init = on_init,
-    capabilities = capabilities,
-  })
-end
-
 -- Enhanced diagnostics configuration
 vim.diagnostic.config({
   virtual_text = {
@@ -119,3 +243,10 @@ vim.diagnostic.config({
   update_in_insert = false,
   severity_sort = true,
 })
+
+-- Custom diagnostic signs
+local signs = { Error = "󰅚 ", Warn = "󰀪 ", Hint = "󰌶 ", Info = " " }
+for type, icon in pairs(signs) do
+  local hl = "DiagnosticSign" .. type
+  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
+end

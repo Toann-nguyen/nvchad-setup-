@@ -1,35 +1,49 @@
 -- ~/.config/nvim/lua/configs/overrides.lua
--- Override các cấu hình mặc định của NvChad
-
 local M = {}
 
 -- Treesitter configuration
 M.treesitter = {
   ensure_installed = {
-    "php",          -- Hỗ trợ PHP
-    "javascript",   -- Hỗ trợ JS (React)
-    "typescript",   -- Hỗ trợ TS (NextJS)
-    "tsx",          -- Hỗ trợ TSX (React/NextJS)
-    "html",         -- Hỗ trợ HTML
-    "css",          -- Hỗ trợ CSS
+    -- Frontend
+    "javascript",
+    "typescript",
+    "tsx",
+    "html",
+    "css",
+    "scss",
     "json",
+    "graphql",
+    
+    -- Backend
+    "php",
     "c",
     "cpp",
+    "python",
+    "go",
+    "rust",
+    
+    -- Config/Misc
     "lua",
     "vim",
     "vimdoc",
     "query",
     "markdown",
     "markdown_inline",
+    "yaml",
+    "toml",
+    "bash",
+    "regex",
   },
   
   highlight = {
     enable = true,
     use_languagetree = true,
+    additional_vim_regex_highlighting = false,
   },
 
   indent = {
     enable = true,
+    disable = { "python" },
   },
 
   incremental_selection = {
@@ -41,6 +55,16 @@ M.treesitter = {
       node_decremental = "<leader>sd",
     },
   },
+
+  -- Enhanced support for JSX/TSX
+  context_commentstring = {
+    enable = true,
+    enable_autocmd = false,
+  },
+
+  autotag = {
+    enable = true,
+  },
 }
 
 -- Mason configuration
@@ -48,14 +72,26 @@ M.mason = {
   ensure_installed = {
     -- LSP servers
     "clangd",
+    "ts-ls",              -- TypeScript/JavaScript
+    "html",               -- HTML
+    "cssls",              -- CSS
+    "tailwindcss",        -- TailwindCSS
+    "eslint",             -- ESLint
+    "jsonls",             -- JSON
+    "intelephense",       -- PHP
     
     -- Formatters
     "clang-format",
+    "prettier",           -- JS/TS/CSS/HTML
+    "stylua",             -- Lua
+    "php-cs-fixer",       -- PHP
     
-    "php-cs-fixer",
-    "intelephense",
+    -- Linters
+    "eslint_d",           -- Fast ESLint
+    
     -- Debug adapters
     "cpptools",
+    "js-debug-adapter",   -- Node.js debugger
   },
   
   ui = {
@@ -87,7 +123,7 @@ M.cmp = function()
 
   local options = {
     completion = {
-      completeopt = "menu,menuone",
+      completeopt = "menu,menuone,noinsert",
     },
 
     window = {
@@ -145,7 +181,8 @@ M.cmp = function()
           luasnip = "[Snippet]",
           buffer = "[Buffer]",
           path = "[Path]",
-          laravel = "[Laravel]",  -- THÊM: Menu cho Laravel completions
+          laravel = "[Laravel]",
+          crates = "[Crates]",
         })[entry.source.name]
         
         return vim_item
@@ -184,11 +221,12 @@ M.cmp = function()
     },
     
     sources = {
-      { name = "laravel", priority = 900 },  -- THÊM: Laravel source (routes, views, configs, env, model columns)
       { name = "nvim_lsp", priority = 1000 },
+      { name = "laravel", priority = 900 },
       { name = "luasnip", priority = 750 },
       { name = "buffer", priority = 500 },
       { name = "path", priority = 250 },
+      { name = "crates", priority = 800 },
     },
   }
   

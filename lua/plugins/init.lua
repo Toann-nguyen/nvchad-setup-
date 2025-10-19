@@ -1,49 +1,69 @@
 -- ~/.config/nvim/lua/plugins/init.lua
--- Cấu hình tất cả plugins cho competitive programming
+-- Enhanced config for C++, PHP/Laravel, React/TypeScript/TailwindCSS
 
 local overrides = require("configs.overrides")
 
 return {
   {
+  "b0o/schemastore.nvim",
+},
+
+  {
   'mrcjkb/rustaceanvim',
-  version = '^6', -- Recommended
-  lazy = false, -- This plugin is already lazy
-   config = function()
+  version = '^6',
+  lazy = false,
+  config = function()
     local mason_registry = require("mason-registry")
 
-    -- Lấy package codelldb từ mason
+    if not mason_registry.is_installed("codelldb") then
+      vim.notify("codelldb chưa được cài, chạy :MasonInstall codelldb", vim.log.levels.ERROR)
+      return
+    end
+    
+  -- Lấy thông tin package và kiểm tra xem có lấy được không
+  local codelldb = mason_registry.get_package('codelldb')
+  if not codelldb then
+    vim.notify("Không thể lấy thông tin package 'codelldb' từ Mason.", vim.log.levels.ERROR)
+    return
+  end
+
     local codelldb = mason_registry.get_package("codelldb")
-    local extension_path = codelldb:get_install_path() .. "/extension/"
+    local extension_path = codelldb:get_install_dir() .. "/extension/"
     local codelldb_path = extension_path .. "adapter/codelldb"
     local liblldb_path = extension_path .. "lldb/lib/liblldb.so"
-    -- nếu Ubuntu/Linux thì đổi lại:
-    -- local liblldb_path = extension_path .. "lldb/lib/liblldb.so"
-    
-    -- local liblldb_path = extension_path .. "lldb/lib/liblldb.so"  -- Linux
-    -- local liblldb_path = extension_path .. "lldb/bin/liblldb.dll" -- Windows
 
     local cfg = require("rustaceanvim.config")
-
     vim.g.rustaceanvim = {
+      server = {
+        on_attach = function(client, bufnr)
+          -- config LSP riêng
+        end,
+        settings = {
+          ["rust-analyzer"] = {
+            cargo = { allFeatures = true },
+          },
+        },
+      },
       dap = {
         adapter = cfg.get_codelldb_adapter(codelldb_path, liblldb_path),
       },
     }
   end,
 },
-{
+
+  {
     'rust-lang/rust.vim',
     ft = "rust",
-    init = function ()
+    init = function()
       vim.g.rustfmt_autosave = 1
     end
   },
 
--- Core DAP
-{
-  "mfussenegger/nvim-dap",
-   config = function()
-			local dap, dapui = require("dap"), require("dapui")
+  -- DAP (Debugger)
+  {
+    "mfussenegger/nvim-dap",
+    config = function()
+      local dap, dapui = require("dap"), require("dapui")
       dap.listeners.before.attach.dapui_config = function()
         dapui.open()
       end
@@ -56,20 +76,20 @@ return {
       dap.listeners.before.event_exited.dapui_config = function()
         dapui.close()
       end
-		end,
-},
-
--- UI cho DAP
-{
-  "rcarriga/nvim-dap-ui",
-  dependencies = {
-    "mfussenegger/nvim-dap",
-    "nvim-neotest/nvim-nio",
+    end,
   },
-  config = function()
-    require("dapui").setup()
-  end,
-},
+
+  {
+    "rcarriga/nvim-dap-ui",
+    dependencies = {
+      "mfussenegger/nvim-dap",
+      "nvim-neotest/nvim-nio",
+    },
+    config = function()
+      require("dapui").setup()
+    end,
+  },
+
   {
     'saecki/crates.nvim',
     ft = {"toml"},
@@ -86,7 +106,164 @@ return {
       })
     end
   },
-  -- THÊM: Snacks.nvim (required cho pickers provider mặc định của laravel.nvim)
+
+  -- ========== REACT/TYPESCRIPT/TAILWIND SETUP ==========
+  
+  -- TypeScript/JavaScript LSP & Tools
+  {
+    "pmizio/typescript-tools.nvim",
+    dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+    ft = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
+    opts = {
+      settings = {
+        tsserver_file_preferences = {
+          includeInlayParameterNameHints = "all",
+          includeInlayParameterNameHintsWhenArgumentMatchesName = true,
+          includeInlayFunctionParameterTypeHints = true,
+          includeInlayVariableTypeHints = true,
+          includeInlayPropertyDeclarationTypeHints = true,
+          includeInlayFunctionLikeReturnTypeHints = true,
+          includeInlayEnumMemberValueHints = true,
+        },
+      },
+    },
+  },
+
+  -- Tailwind CSS support
+  {
+    "neovim/nvim-lspconfig",
+    config = function()
+      require("nvchad.configs.lspconfig").defaults()
+      require("configs.lspconfig")
+    end,
+  },
+
+  -- Auto-pairing brackets
+  {
+    "windwp/nvim-autopairs",
+    event = "InsertEnter",
+    config = function()
+      require("nvim-autopairs").setup({
+        check_ts = true,
+        ts_config = {
+          lua = { "string" },
+          javascript = { "template_string" },
+          typescript = { "template_string" },
+        },
+        fast_wrap = {
+          map = '<M-e>',
+          chars = { '{', '[', '(', '"', "'" },
+          pattern = [=[[%'%"%>%]%)%}%,]]=],
+          end_key = '$',
+          keys = 'qwertyuiopzxcvbnmasdfghjkl',
+          check_comma = true,
+          highlight = 'Search',
+          highlight_grey='Comment'
+        },
+      })
+      
+      -- Integration with cmp
+      local cmp_autopairs = require('nvim-autopairs.completion.cmp')
+      local cmp = require('cmp')
+      cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
+    end,
+  },
+
+  -- Auto close/rename HTML tags
+  {
+    "windwp/nvim-ts-autotag",
+    ft = {
+      "html",
+      "javascript",
+      "javascriptreact",
+      "typescript",
+      "typescriptreact",
+      "vue",
+      "xml",
+      "php",
+      "markdown",
+    },
+    config = function()
+      require("nvim-ts-autotag").setup({
+        opts = {
+          enable_close = true,
+          enable_rename = true,
+          enable_close_on_slash = false
+        },
+      })
+    end,
+  },
+
+  -- Colorize color codes (#fff, rgb(), etc)
+  {
+    "norcalli/nvim-colorizer.lua",
+    ft = { "css", "scss", "html", "javascript", "typescript", "jsx", "tsx" },
+    config = function()
+      require("colorizer").setup({
+        "css",
+        "scss",
+        "html",
+        "javascript",
+        "typescript",
+        "javascriptreact",
+        "typescriptreact",
+      }, {
+        RGB = true,
+        RRGGBB = true,
+        names = true,
+        RRGGBBAA = true,
+        rgb_fn = true,
+        hsl_fn = true,
+        css = true,
+        css_fn = true,
+      })
+    end,
+  },
+
+  -- Emmet for HTML/CSS
+  {
+    "mattn/emmet-vim",
+    ft = { "html", "css", "javascriptreact", "typescriptreact" },
+    config = function()
+      vim.g.user_emmet_leader_key = '<C-Z>'
+      vim.g.user_emmet_settings = {
+        javascript = {
+          extends = 'jsx',
+        },
+        typescript = {
+          extends = 'tsx',
+        },
+      }
+    end,
+  },
+
+  -- GitHub Copilot (optional)
+  {
+    "github/copilot.vim",
+    event = "InsertEnter",
+    config = function()
+      vim.g.copilot_no_tab_map = true
+      vim.keymap.set('i', '<C-J>', 'copilot#Accept("\\<CR>")', {
+        expr = true,
+        replace_keycodes = false
+      })
+      vim.g.copilot_filetypes = {
+        ["*"] = false,
+        javascript = true,
+        typescript = true,
+        lua = true,
+        rust = true,
+        c = true,
+        cpp = true,
+        python = true,
+        php = true,
+      }
+    end,
+  },
+
+  -- ========== END REACT/TYPESCRIPT SETUP ==========
+
+  -- Snacks.nvim (for Laravel)
   {
     "folke/snacks.nvim",
     lazy = true,
@@ -95,36 +272,24 @@ return {
       "nvim-lua/plenary.nvim",
     },
     opts = {
-      -- Default config from repo (brief)
       ui = {
         border = "rounded",
       },
     },
   },
-  -- THÊM: Dependencies cho laravel.nvim (nui, plenary, nio đã có; thêm vim-dotenv và mcphub optional)
+
+  -- Laravel dependencies
   {
-    "tpope/vim-dotenv",  -- Required cho .env completions
+    "tpope/vim-dotenv",
     event = "VeryLazy",
-    config = function()
-    -- Mapping tương tự Ctrl+D của VSCode
-    vim.g.multi_cursor_use_default_mapping = false -- Tắt default mappings
-    vim.g.multi_cursor_start_word_key = '<C-d>' -- Map Ctrl+D để chọn từ tiếp theo
-    vim.g.multi_cursor_next_key = '<C-d>' -- Ctrl+D để thêm cursor tiếp theo
-    vim.g.multi_cursor_prev_key = '<C-p>' -- Ctrl+P để quay lại (tùy chọn)
-    vim.g.multi_cursor_skip_key = '<C-x>' -- Ctrl+X để skip occurrence
-    vim.g.multi_cursor_quit_key = '<Esc>' -- Thoát multiple cursors
-  end,
   },
+  
   {
-    "nvim-neotest/nvim-nio",  -- Required cho async
-    lazy = true,
-  },
-  {
-    "ravitemer/mcphub.nvim",  -- Optional cho mcphub integration (skip nếu không cần)
+    "nvim-neotest/nvim-nio",
     lazy = true,
   },
 
-  -- THÊM: adalessa/laravel.nvim (verbatim từ README, với opts lsp_server = "intelephense" để match config bạn)
+  -- Laravel.nvim
   {
     "adalessa/laravel.nvim",
     dependencies = {
@@ -132,21 +297,26 @@ return {
       "MunifTanjim/nui.nvim",
       "nvim-lua/plenary.nvim",
       "nvim-neotest/nvim-nio",
-      "ravitemer/mcphub.nvim", -- optional
     },
-  -- Telescope setup với tag 0.1.8
-  {
-    "nvim-telescope/telescope.nvim",
-    tag = '0.1.8',  -- Tag ổn định từ GitHub
-    dependencies = { 
-      'nvim-lua/plenary.nvim'  -- Dependency bắt buộc
+    cmd = { "Laravel" },
+    keys = {
+      { "<leader>ll", function() require("laravel.pickers.laravel"):run() end, desc = "Laravel: Picker" },
+      { "<leader>la", function() require("laravel.pickers.artisan"):run() end, desc = "Laravel: Artisan" },
+      { "<leader>lr", function() require("laravel.pickers.routes"):run() end, desc = "Laravel: Routes" },
+      { "<leader>lm", function() require("laravel.pickers.make"):run() end, desc = "Laravel: Make" },
     },
-    cmd = "Telescope",
-    config = function()
-      require("telescope").setup({})
-    end,
+    event = { "VeryLazy" },
+    opts = {
+      lsp_server = "intelephense",
+      features = {
+        pickers = {
+          provider = "snacks",
+        },
+      },
+    },
   },
-  -- Core plugins cần override
+
+  -- Core plugins
   {
     "nvim-treesitter/nvim-treesitter",
     opts = overrides.treesitter,
@@ -158,108 +328,25 @@ return {
   },
 
   {
-    "neovim/nvim-lspconfig",
-    config = function()
-      require("nvchad.configs.lspconfig").defaults()
-      require("configs.lspconfig")
-    end,
-  },
-
-  {
     "hrsh7th/nvim-cmp",
     opts = overrides.cmp,
   },
-    cmd = { "Laravel" },
-    keys = {
-      { "<leader>ll", function() Laravel.pickers.laravel() end,              desc = "Laravel: Open Laravel Picker" },
-      { "<c-g>",      function() Laravel.commands.run("view:finder") end,    desc = "Laravel: Open View Finder" },
-      { "<leader>la", function() Laravel.pickers.artisan() end,              desc = "Laravel: Open Artisan Picker" },
-      { "<leader>lt", function() Laravel.commands.run("actions") end,        desc = "Laravel: Open Actions Picker" },
-      { "<leader>lr", function() Laravel.pickers.routes() end,               desc = "Laravel: Open Routes Picker" },
-      { "<leader>lh", function() Laravel.run("artisan docs") end,            desc = "Laravel: Open Documentation" },
-      { "<leader>lm", function() Laravel.pickers.make() end,                 desc = "Laravel: Open Make Picker" },
-      { "<leader>lc", function() Laravel.pickers.commands() end,             desc = "Laravel: Open Commands Picker" },
-      { "<leader>lo", function() Laravel.pickers.resources() end,            desc = "Laravel: Open Resources Picker" },
-      { "<leader>lp", function() Laravel.commands.run("command_center") end, desc = "Laravel: Open Command Center" },
-      {
-        "gf",
-        function()
-          local ok, res = pcall(function()
-            if Laravel.app("gf").cursorOnResource() then
-              return "<cmd>lua Laravel.commands.run('gf')<cr>"
-            end
-          end)
-          if not ok or not res then
-            return "gf"
-          end
-          return res
-        end,
-        expr = true,
-        noremap = true,
-      },
-    },
-    event = { "VeryLazy" },
-    opts = {
-      lsp_server = "intelephense", -- "phpactor | intelephense" (match config bạn)
-      features = {
-        pickers = {
-          provider = "snacks", -- "snacks | telescope | fzf-lua | ui-select" (mặc định snacks)
-        },
-      },
-    },
-  },
--- THÊM: Laravel.nvim (load cho PHP/Blade, dependencies plenary đã có)
-  {
-    "adibhanna/laravel.nvim",
-    ft = { "php", "blade" },  -- Lazy load cho file PHP/Blade
-    dependencies = {
-      "nvim-telescope/telescope.nvim",  -- Đã có, cho route/view finder
-      "nvim-lua/plenary.nvim",         -- Đã có
-      "nvim-treesitter/nvim-treesitter", -- Đã có, cho parsing
-    },
-    config = function()
-      require("laravel").setup({
-        -- Config mặc định từ docs (có thể customize sau)
-        root_dir = {
-          "composer.json",
-          ".git",
-          "artisan",
-        },
-        -- Enable dump viewer (tự động capture dump()/dd())
-        dump = {
-          enable = true,
-          open = "current",  -- Mở dump viewer trong buffer hiện tại
-        },
-        -- Artisan/Composer integration
-        artisan = {
-          bin = "php artisan",  -- Hoặc "sail artisan" nếu dùng Sail
-        },
-        composer = {
-          bin = "composer",
-        },
-        -- Autocompletion cache (30s như docs)
-        cache = {
-          ttl = 30,
-        },
-      })
-      -- Đăng ký commands/keymaps tự động từ plugin
-    end,
-    cmd = { "Artisan", "Composer", "LaravelMake", "LaravelRoute", "LaravelStatus" },  -- Commands chính
-  },
-  -- Telescope setup
+
+  -- Telescope
   {
     "nvim-telescope/telescope.nvim",
-    cmd = "Telescope",
-    dependencies = {
-      "nvim-lua/plenary.nvim", -- Dependency bắt buộc
+    tag = '0.1.8',
+    dependencies = { 
+      'nvim-lua/plenary.nvim',
       {
-        "nvim-telescope/telescope-fzf-native.nvim", -- Tùy chọn, tăng tốc độ tìm kiếm
-        build = "make", -- Compile với make
+        'nvim-telescope/telescope-fzf-native.nvim',
+        build = 'make',
         cond = function()
-          return vim.fn.executable("make") == 1 -- Kiểm tra make có sẵn
+          return vim.fn.executable 'make' == 1
         end,
       },
     },
+    cmd = "Telescope",
     config = function()
       local telescope = require("telescope")
       telescope.setup({
@@ -271,13 +358,18 @@ return {
             },
           },
         },
+        pickers = {
+          find_files = {
+            hidden = true,
+            find_command = { "rg", "--files", "--hidden", "--glob", "!.git/*" },
+          },
+        },
       })
-      -- Load extension fzf nếu có
-      pcall(require("telescope").load_extension, "fzf")
+      pcall(telescope.load_extension, 'fzf')
     end,
   },
 
-  -- Code formatting - Fixed configuration
+  -- Code formatting
   {
     "stevearc/conform.nvim",
     event = "BufWritePre",
@@ -289,10 +381,13 @@ return {
         lua = { "stylua" },
         python = { "isort", "black" },
         javascript = { "prettier" },
+        javascriptreact = { "prettier" },
         typescript = { "prettier" },
+        typescriptreact = { "prettier" },
         tsx = { "prettier" },
         html = { "prettier" },
         css = { "prettier" },
+        scss = { "prettier" },
         json = { "prettier" },
         yaml = { "prettier" },
         markdown = { "prettier" },
@@ -317,80 +412,29 @@ return {
             .. "SpaceBeforeParens: ControlStatements}",
           },
         },
+        prettier = {
+          prepend_args = { "--single-quote", "--jsx-single-quote" },
+        },
       },
     },
     config = function(_, opts)
       require("conform").setup(opts)
       
-      -- Manual format keymap
       vim.keymap.set({ "n", "v" }, "<leader>fm", function()
         require("conform").format({ lsp_fallback = true })
       end, { desc = "Format files" })
     end,
   },
 
-  -- PHP/Laravel support
-  {
-    "phpactor/phpactor",
-    ft = "php",
-    build = "composer install --no-dev",
-    config = function()
-      require("phpactor").setup()
-    end,
-  },
-  -- Frontend support (ReactJS, NextJS, HTML/CSS)
-  {
-    "mxsdev/nvim-dap-vscode-js",
-    ft = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
-    config = function()
-      require("dap-vscode-js").setup({
-        debugger_path = vim.fn.stdpath("data") .. "/mason/packages/js-debug-adapter",
-      })
-    end,
-  },
-
-  {
-    "jose-elias-alvarez/null-ls.nvim",
-    config = function()
-      local null_ls = require("null-ls")
-      null_ls.setup({
-        sources = {
-          null_ls.builtins.formatting.prettier.with({
-            filetypes = { "javascript", "typescript", "css", "html", "json" },
-          }),
-        },
-      })
-    end,
-  },
-
-  {
-    "MunifTanjim/prettier.nvim",
-    ft = { "javascript", "typescript", "css", "html", "json" },
-    config = function()
-      require("prettier").setup()
-    end,
-  },
-
-  -- Telescope cho tìm kiếm
-  {
-    "nvim-telescope/telescope.nvim",
-    dependencies = { "nvim-lua/plenary.nvim" },
-    config = function()
-      require("telescope").setup()
-    end,
-  },
-
-  -- FIXED: Competitive Programming plugins
+  -- Competitive Programming
   {
     "xeluxee/competitest.nvim",
     dependencies = { "MunifTanjim/nui.nvim" },
     config = function()
       require("competitest").setup({
-        -- Không sử dụng testcase files, chỉ dùng input trực tiếp
         testcases_directory = "./testcases",
-        testcases_use_single_file = true,  -- Changed to true
+        testcases_use_single_file = true,
         
-        -- FIXED: Compile command
         compile_command = {
           cpp = { 
             exec = "g++", 
@@ -410,72 +454,40 @@ return {
           cpp = { exec = "./$(FNOEXT)" },
         },
         
-        -- FIXED: Test settings
-        multiple_testing = 1,  -- Changed to 1 for single test
+        multiple_testing = 1,
         maximum_time = 5000,
-        
-        output_compare_method = "squish",  -- Back to squish for flexible comparison
+        output_compare_method = "squish",
         view_output = true,
         
-        -- FIXED: UI configuration để có thể edit input trực tiếp
         popup_width = 0.95,
         popup_height = 0.95,
         popup_ui = {
           total_width = 0.95,
           total_height = 0.95,
           layout = {
-            { 1, "tc" },  -- Test cases selection
-            { 4, {        -- Main content area
-                { 1, "si" },  -- Standard input (editable)
-                { 1, "so" },  -- Standard output
+            { 1, "tc" },
+            { 4, {
+                { 1, "si" },
+                { 1, "so" },
               },
             },
-            { 3, {        -- Expected and error area
-                { 1, "eo" },  -- Expected output
-                { 1, "se" },  -- Standard error
+            { 3, {
+                { 1, "eo" },
+                { 1, "se" },
               },
             },
           },
         },
         
-        -- Split UI configuration (alternative layout)
-        split_ui = {
-          position = "right",
-          relative_to_editor = true,
-          total_width = 0.5,
-          vertical_layout = {
-            { 1, "si" },  -- Input area (editable)
-            { 2, { { 1, "so" }, { 1, "eo" } } }, -- Output comparison
-            { 1, "se" },  -- Error area
-          },
-        },
-        
-        -- FIXED: Auto-save settings
         save_current_file = true,
         save_all_files = false,
-        
-        -- Companion settings
         companion_port = 27121,
         receive_print_message = true,
-        
-        -- FIXED: Testcase naming
-        testcases_input_name = "input",
-        testcases_output_name = "output",
-        
-        -- FIXED: Editor integration
-        editor_ui = {
-          editor_split_horizontal = false,
-          editor_split_vertical = true,
-        },
       })
-      
-      -- FIXED: Remove auto-create testcase files - use direct input instead
-      -- No autocmd needed for file-based testcases
     end,
-    cmd = { "CompetiTest", "CompetiTestAdd", "CompetiTestEdit", "CompetiTestDelete", "CompetiTestRun" },
+    cmd = { "CompetiTest" },
     keys = {
       { "<F5>", function()
-        -- Auto save before running
         vim.cmd("w")
         vim.cmd("CompetiTest run")
       end, desc = "Save and run tests" },
@@ -486,7 +498,6 @@ return {
       { "<leader>rt", "<cmd>CompetiTest add_testcase<cr>", desc = "Add test case" },
       { "<leader>re", "<cmd>CompetiTest edit_testcase<cr>", desc = "Edit test case" },
       { "<leader>rd", "<cmd>CompetiTest delete_testcase<cr>", desc = "Delete test case" },
-      { "<leader>ro", "<cmd>CompetiTest show_ui<cr>", desc = "Show test UI" },
     },
   },
 
@@ -498,48 +509,10 @@ return {
     },
     config = function()
       require("luasnip.loaders.from_vscode").lazy_load()
-      local ls = require("luasnip")
-      local s = ls.snippet
-      local t = ls.text_node
-      local i = ls.insert_node
-
-      -- Competitive programming snippets
-      ls.add_snippets("cpp", {
-        s("template", {
-          t({
-            "#include <iostream>",
-            "using namespace std;",
-            "",
-            "int main() {",
-            "    ios_base::sync_with_stdio(false);",
-            "    cin.tie(NULL);",
-            "    ",
-            "    "
-          }),
-          i(1, "cout << \"hello\" << endl;"),
-          t({
-            "",
-            "    return 0;",
-            "}",
-          })
-        }),
-        
-        s("fastio", {
-          t({
-            "ios_base::sync_with_stdio(false);",
-            "cin.tie(NULL);"
-          })
-        }),
-        
-        s("vi", {
-          t("vector<int> "), i(1, "name"), t("("), i(2, "size"), t(");")
-        }),
-        
-        })
     end,
   },
 
-  -- Enhanced clipboard support
+  -- Enhanced clipboard
   {
     "ojroques/nvim-osc52",
     config = function()
@@ -567,7 +540,6 @@ return {
         max_length = 0,
         silent = false,
         trim = false,
-        notification = true,  -- Thêm: Hiển thị notify nếu copy fail
       }
     end,
   },
