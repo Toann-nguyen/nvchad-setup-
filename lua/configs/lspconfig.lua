@@ -5,11 +5,11 @@ local capabilities = configs.capabilities
 
 local lspconfig = require("lspconfig")
 
--- Enhanced on_attach function for competitive programming
-local function cp_on_attach(client, bufnr)
+-- Enhanced on_attach function
+local function enhanced_on_attach(client, bufnr)
   on_attach(client, bufnr)
   
-  -- Additional keymaps for competitive programming
+  -- Additional keymaps
   local function opts(desc)
     return { buffer = bufnr, desc = "LSP " .. desc }
   end
@@ -17,23 +17,34 @@ local function cp_on_attach(client, bufnr)
   vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts "Go to declaration")
   vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts "Go to definition")
   vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts "Go to implementation")
-  vim.keymap.set("n", "<leader>sh", vim.lsp.buf.signature_help, opts "Show signature help")
-  vim.keymap.set("n", "<leader>wa", vim.lsp.buf.add_workspace_folder, opts "Add workspace folder")
-  vim.keymap.set("n", "<leader>wr", vim.lsp.buf.remove_workspace_folder, opts "Remove workspace folder")
-  vim.keymap.set("n", "<leader>wl", function()
-    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-  end, opts "List workspace folders")
-  vim.keymap.set("n", "<leader>D", vim.lsp.buf.type_definition, opts "Go to type definition")
+  vim.keymap.set("n", "K", vim.lsp.buf.hover, opts "Hover documentation")
+  vim.keymap.set("n", "<C-k>", vim.lsp.buf.signature_help, opts "Signature help")
+  vim.keymap.set("n", "gr", vim.lsp.buf.references, opts "Show references")
+  vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts "Code action")
   vim.keymap.set("n", "<leader>ra", function()
     require("nvchad.lsp.renamer")()
-  end, opts "NvRename")
-  vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts "Code action")
-  vim.keymap.set("n", "gr", vim.lsp.buf.references, opts "Show references")
+  end, opts "Rename")
+  
+  -- Format on save for web dev files
+  if client.supports_method("textDocument/formatting") then
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      group = vim.api.nvim_create_augroup("LspFormat." .. bufnr, { clear = true }),
+      buffer = bufnr,
+      callback = function()
+        vim.lsp.buf.format({
+          filter = function(format_client)
+            -- Use null-ls/conform for formatting if available
+            return format_client.name ~= "tsserver" and format_client.name ~= "volar"
+          end,
+        })
+      end,
+    })
+  end
 end
 
--- Clangd configuration for competitive programming
+-- C++ / Clangd (for competitive programming)
 lspconfig.clangd.setup({
-  on_attach = cp_on_attach,
+  on_attach = enhanced_on_attach,
   on_init = on_init,
   capabilities = capabilities,
   
@@ -50,40 +61,207 @@ lspconfig.clangd.setup({
     "--fallback-style=Google",
   },
   
-  init_options = {
-    usePlaceholders = true,
-    completeUnimported = true,
-    clangdFileStatus = true,
-  },
+  filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
+})
+
+-- TypeScript & JavaScript (tsserver)
+lspconfig.ts_ls.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
   
-  settings = {
-    clangd = {
-      semanticHighlighting = true,
+  init_options = {
+    preferences = {
+      disableSuggestions = false,
+      quotePreference = "auto",
+      includeCompletionsForModuleExports = true,
+      includeCompletionsForImportStatements = true,
+      importModuleSpecifierPreference = "shortest",
     },
   },
   
-  filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
-  
-  root_dir = lspconfig.util.root_pattern(
-    ".clangd",
-    ".clang-tidy",
-    ".clang-format",
-    "compile_commands.json",
-    "compile_flags.txt",
-    "configure.ac",
-    ".git"
-  ),
+  filetypes = {
+    "javascript",
+    "javascriptreact",
+    "javascript.jsx",
+    "typescript",
+    "typescriptreact",
+    "typescript.tsx",
+  },
 })
 
--- Additional LSP servers
-local servers = { "html", "cssls" }
-for _, lsp in ipairs(servers) do
-  lspconfig[lsp].setup({
-    on_attach = on_attach,
-    on_init = on_init,
-    capabilities = capabilities,
-  })
-end
+-- Tailwind CSS
+lspconfig.tailwindcss.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  
+  settings = {
+    tailwindCSS = {
+      classAttributes = { "class", "className", "classList", "ngClass" },
+      lint = {
+        cssConflict = "warning",
+        invalidApply = "error",
+        invalidConfigPath = "error",
+        invalidScreen = "error",
+        invalidTailwindDirective = "error",
+        invalidVariant = "error",
+        recommendedVariantOrder = "warning",
+      },
+      validate = true,
+      experimental = {
+        classRegex = {
+          "tw`([^`]*)",
+          "tw=\"([^\"]*)",
+          "tw={\"([^\"}]*)",
+          "tw\\.\\w+`([^`]*)",
+          { "clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+          { "classnames\\(([^)]*)\\)", "'([^']*)'" },
+          { "cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
+        },
+      },
+    },
+  },
+  
+  filetypes = {
+    "html",
+    "css",
+    "scss",
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "vue",
+    "svelte",
+  },
+})
+
+-- HTML
+lspconfig.html.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  
+  filetypes = { "html", "htmldjango" },
+})
+
+-- CSS
+lspconfig.cssls.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  
+  settings = {
+    css = {
+      validate = true,
+      lint = {
+        unknownAtRules = "ignore",
+      },
+    },
+    scss = {
+      validate = true,
+      lint = {
+        unknownAtRules = "ignore",
+      },
+    },
+    less = {
+      validate = true,
+      lint = {
+        unknownAtRules = "ignore",
+      },
+    },
+  },
+})
+
+-- ESLint
+lspconfig.eslint.setup({
+  on_attach = function(client, bufnr)
+    enhanced_on_attach(client, bufnr)
+    
+    -- Auto fix on save
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      buffer = bufnr,
+      command = "EslintFixAll",
+    })
+  end,
+  on_init = on_init,
+  capabilities = capabilities,
+  
+  settings = {
+    workingDirectory = { mode = "auto" },
+    format = true,
+    nodePath = "",
+    quiet = false,
+    onIgnoredFiles = "off",
+    rulesCustomizations = {},
+    run = "onType",
+    validate = "on",
+    codeAction = {
+      disableRuleComment = {
+        enable = true,
+        location = "separateLine",
+      },
+      showDocumentation = {
+        enable = true,
+      },
+    },
+  },
+})
+
+-- JSON
+lspconfig.jsonls.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  
+  settings = {
+    json = {
+      schemas = require("schemastore").json.schemas(),
+      validate = { enable = true },
+    },
+  },
+})
+
+-- Emmet (for HTML/JSX)
+lspconfig.emmet_ls.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  
+  filetypes = {
+    "html",
+    "typescriptreact",
+    "javascriptreact",
+    "css",
+    "sass",
+    "scss",
+    "less",
+  },
+})
+
+-- Lua (for Neovim config)
+lspconfig.lua_ls.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  
+  settings = {
+    Lua = {
+      diagnostics = {
+        globals = { "vim" },
+      },
+      workspace = {
+        library = {
+          [vim.fn.expand("$VIMRUNTIME/lua")] = true,
+          [vim.fn.expand("$VIMRUNTIME/lua/vim/lsp")] = true,
+          [vim.fn.stdpath("data") .. "/lazy/lazy.nvim/lua/lazy"] = true,
+        },
+        maxPreload = 100000,
+        preloadFileSize = 10000,
+      },
+    },
+  },
+})
 
 -- Enhanced diagnostics configuration
 vim.diagnostic.config({
@@ -94,9 +272,18 @@ vim.diagnostic.config({
   float = {
     source = "always",
     border = "rounded",
+    header = "",
+    prefix = "",
   },
   signs = true,
   underline = true,
   update_in_insert = false,
   severity_sort = true,
 })
+
+-- Diagnostic signs
+local signs = { Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }
+for type, icon in pairs(signs) do
+  local hl = "DiagnosticSign" .. type
+  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
+end
