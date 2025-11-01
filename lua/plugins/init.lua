@@ -156,8 +156,25 @@ return {
       })
       
      -- React/TypeScript snippets
-      ls.add_snippets("typescriptreact", {
-        s("rfc", {
+          ls.add_snippets("javascript", {
+      s("log", { -- Console log một biến
+        t("console.log('"),
+        i(1, "variable"),
+        t(":', "),
+        rep(1),
+        t(");"),
+      }),
+      s("af", { -- Arrow function
+        t("("),
+        i(1, "params"),
+        t(") => {"),
+        i(0),
+        t({"", "}"}),
+      }),
+    })
+
+       ls.add_snippets("typescriptreact", {
+      s("rfc", {
           t({"import React from 'react';", "", "interface Props {", "  "}),
           i(1, ""),
           t({"", "}", "", "const "}),
@@ -165,13 +182,26 @@ return {
           t({": React.FC<Props> = () => {", "  return (", "    <div>", "      "}),
           i(3, ""),
           t({"", "    </div>", "  );", "};", "", "export default "}),
-          -- SỬA DÒNG NÀY: TỪ ls.rep(2) THÀNH rep(2)
           rep(2),
           t(";")
-        }),
+      }),
+      -- Thêm một snippet useState tiện lợi hơn
+      s("usf", {
+          t("const ["),
+          i(1, "state"),
+          t(", set"),
+          -- Tự động viết hoa chữ cái đầu
+          ls.function_node(function(args)
+            local state_val = args[1][1] or ""
+            return state_val:sub(1,1):upper() .. state_val:sub(2)
+          end, {1}),
+          t("] = useState("),
+          i(2, "initialState"),
+          t(");")
       })
-    end,
-  }, 
+    })
+  end,
+}, 
   -- Enhanced clipboard
   {
     "ojroques/nvim-osc52",
