@@ -1,9 +1,18 @@
-local configs = require("nvchad.configs.lspconfig")
+-- Try to load NvChad lsp defaults; provide safe fallbacks if not present
+local ok, configs = pcall(require, "nvchad.configs.lspconfig")
+if not ok or type(configs) ~= "table" then
+  configs = {}
+  configs.on_attach = configs.on_attach or function() end
+  configs.on_init = configs.on_init or function() end
+  configs.capabilities = configs.capabilities or (vim.lsp and vim.lsp.protocol and vim.lsp.protocol.make_client_capabilities and vim.lsp.protocol.make_client_capabilities() or {})
+end
+
 local on_attach = configs.on_attach
 local on_init = configs.on_init
 local capabilities = configs.capabilities
 
 local lspconfig = require("lspconfig")
+local util = require("lspconfig.util")
 
 -- Enhanced on_attach function
 local function enhanced_on_attach(client, bufnr)
@@ -63,6 +72,79 @@ lspconfig.clangd.setup({
   
   filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
 })
+-- =============================================================================
+-- PYTHON (Pyright) - For AI/Computer Vision
+-- =============================================================================
+lspconfig.pyright.setup({
+  on_attach = enhanced_on_attach,
+  on_init = on_init,
+  capabilities = capabilities,
+  
+  root_dir = function(fname)
+    return util.root_pattern(
+      "pyproject.toml",
+      "setup.py",
+      "setup.cfg",
+      "requirements.txt",
+      "Pipfile",
+      "pyrightconfig.json",
+      ".git"
+    )(fname) or util.path.dirname(fname)
+  end,
+  
+  settings = {
+    python = {
+      analysis = {
+        autoSearchPaths = true,
+        diagnosticMode = "workspace",
+        useLibraryCodeForTypes = true,
+        typeCheckingMode = "basic", -- "off" | "basic" | "strict"
+        
+        -- Important for CV libraries
+        autoImportCompletions = true,
+        extraPaths = {},
+        
+        -- Diagnostics
+        diagnosticSeverityOverrides = {
+          reportUnusedImport = "warning",
+          reportUnusedVariable = "warning",
+          reportDuplicateImport = "warning",
+          reportMissingImports = "warning",
+        },
+      },
+    },
+  },
+  
+  -- Auto-detect virtual environment
+  before_init = function(_, config)
+    local venv_path = os.getenv("VIRTUAL_ENV")
+    if venv_path then
+      config.settings.python.pythonPath = venv_path .. "/bin/python"
+    else
+      config.settings.python.pythonPath = vim.fn.exepath("python3") or vim.fn.exepath("python")
+    end
+  end,
+})
+
+-- Ruff LSP (Fast linting for Python)
+lspconfig.ruff_lsp.setup({ 
+  on_attach = function(client, bufnr)
+    -- Disable hover in favor of Pyright
+    client.server_capabilities.hoverProvider = false
+    enhanced_on_attach(client, bufnr)
+  end,
+  on_init = on_init,
+  capabilities = capabilities,
+  
+  init_options = {
+    settings = {
+      args = {
+        "--select=E,F,W,I,N,UP,B,A,C4,DTZ,ISC,ICN,PIE,PYI,RSE,RET,SIM,TID,TCH,ARG,PL,TRY,RUF",
+      },
+    },
+  },
+})
+
 
 -- TypeScript & JavaScript (tsserver)
 lspconfig.ts_ls.setup({

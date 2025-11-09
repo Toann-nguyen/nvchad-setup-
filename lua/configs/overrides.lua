@@ -18,7 +18,10 @@ M.treesitter = {
     "json",
     "jsonc",
     "graphql",
-    
+    --Python & AI/CV 
+    "python",
+    "rst",    
+
     -- Config files
     "yaml",
     "toml",
@@ -41,6 +44,7 @@ M.treesitter = {
 
   indent = {
     enable = true,
+    disable = { "python" },
   },
 
   incremental_selection = {
@@ -76,7 +80,15 @@ M.mason = {
     "eslint-lsp",
     "prettier",
     "eslint_d",
-    
+
+    -- Python & AI/CV
+    "pyright",           -- LSP server
+    "ruff-lsp",          -- Fast linter (replaces pylint, flake8)
+    "black",             -- Code formatter
+    "isort",             -- Import sorter
+    "mypy",              -- Type checker
+    "debugpy",           -- Debug adapter 
+
     -- HTML/CSS
     "html-lsp",
     "css-lsp",

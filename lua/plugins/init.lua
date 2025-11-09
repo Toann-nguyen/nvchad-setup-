@@ -15,6 +15,82 @@ return {
     opts = overrides.mason,
   },
 
+    -- DAP (Debug Adapter Protocol) for Python
+  {
+    "mfussenegger/nvim-dap",
+    dependencies = {
+      "rcarriga/nvim-dap-ui",
+      "nvim-neotest/nvim-nio",
+      "mfussenegger/nvim-dap-python",
+    },
+    config = function()
+      local dap = require("dap")
+      local dapui = require("dapui")
+      
+      -- Setup DAP UI
+      dapui.setup({
+        icons = { expanded = "▾", collapsed = "▸", current_frame = "▸" },
+        mappings = {
+          expand = { "<CR>", "<2-LeftMouse>" },
+          open = "o",
+          remove = "d",
+          edit = "e",
+          repl = "r",
+          toggle = "t",
+        },
+        layouts = {
+          {
+            elements = {
+              { id = "scopes", size = 0.25 },
+              { id = "breakpoints", size = 0.25 },
+              { id = "stacks", size = 0.25 },
+              { id = "watches", size = 0.25 },
+            },
+            size = 40,
+            position = "left",
+          },
+          {
+            elements = {
+              { id = "repl", size = 0.5 },
+              { id = "console", size = 0.5 },
+            },
+            size = 10,
+            position = "bottom",
+          },
+        },
+        floating = {
+          max_height = nil,
+          max_width = nil,
+          border = "single",
+          mappings = {
+            close = { "q", "<Esc>" },
+          },
+        },
+      })
+      
+      -- Setup Python debugger
+      require("dap-python").setup("python3")
+      
+      -- Auto open/close DAP UI
+      dap.listeners.after.event_initialized["dapui_config"] = function()
+        dapui.open()
+      end
+      dap.listeners.before.event_terminated["dapui_config"] = function()
+        dapui.close()
+      end
+      dap.listeners.before.event_exited["dapui_config"] = function()
+        dapui.close()
+      end
+      
+      -- DAP signs
+      vim.fn.sign_define("DapBreakpoint", { text = "🔴", texthl = "", linehl = "", numhl = "" })
+      vim.fn.sign_define("DapBreakpointCondition", { text = "🟡", texthl = "", linehl = "", numhl = "" })
+      vim.fn.sign_define("DapLogPoint", { text = "📝", texthl = "", linehl = "", numhl = "" })
+      vim.fn.sign_define("DapStopped", { text = "▶️", texthl = "", linehl = "", numhl = "" })
+      vim.fn.sign_define("DapBreakpointRejected", { text = "❌", texthl = "", linehl = "", numhl = "" })
+    end,
+  },
+  
   {
     "neovim/nvim-lspconfig",
     config = function()
@@ -172,7 +248,186 @@ return {
         t({"", "}"}),
       }),
     })
-
+    -- Python snippets for AI/Computer Vision
+ls.add_snippets("python", {
+  -- Main function
+  s("main", {
+    t({
+      'def main():',
+      '    '
+    }),
+    i(1, "pass"),
+    t({
+      '',
+      '',
+      'if __name__ == "__main__":',
+      '    main()'
+    })
+  }),
+  
+  -- OpenCV read image
+  s("cvread", {
+    i(1, "img"),
+    t(" = cv2.imread('"),
+    i(2, "image.jpg"),
+    t("')"),
+  }),
+  
+  -- OpenCV show image
+  s("cvshow", {
+    t("cv2.imshow('"),
+    i(1, "window"),
+    t("', "),
+    i(2, "img"),
+    t({")","cv2.waitKey(0)","cv2.destroyAllWindows()"})
+  }),
+  
+  -- OpenCV video capture
+  s("cvcap", {
+    t({
+      "cap = cv2.VideoCapture(0)",
+      "",
+      "while True:",
+      "    ret, frame = cap.read()",
+      "    if not ret:",
+      "        break",
+      "    ",
+      "    "
+    }),
+    i(1, "# Process frame here"),
+    t({
+      "",
+      "    ",
+      "    cv2.imshow('Frame', frame)",
+      "    if cv2.waitKey(1) & 0xFF == ord('q'):",
+      "        break",
+      "",
+      "cap.release()",
+      "cv2.destroyAllWindows()"
+    })
+  }),
+  
+  -- PyTorch model template
+  s("torchmodel", {
+    t({
+      "import torch",
+      "import torch.nn as nn",
+      "",
+      "class ",
+    }),
+    i(1, "Model"),
+    t({
+      "(nn.Module):",
+      "    def __init__(self):",
+      "        super().__init__()",
+      "        "
+    }),
+    i(2, "# Define layers"),
+    t({
+      "",
+      "",
+      "    def forward(self, x):",
+      "        "
+    }),
+    i(3, "return x"),
+  }),
+  
+  -- NumPy array
+  s("nparr", {
+    i(1, "arr"),
+    t(" = np.array(["),
+    i(2, "data"),
+    t("])"),
+  }),
+  
+  -- Matplotlib plot
+  s("pltshow", {
+    t({
+      "import matplotlib.pyplot as plt",
+      "",
+      "plt.figure(figsize=(10, 6))",
+      "plt.plot(",
+    }),
+    i(1, "x, y"),
+    t({
+      ")",
+      "plt.title('",
+    }),
+    i(2, "Title"),
+    t({
+      "')",
+      "plt.xlabel('",
+    }),
+    i(3, "X"),
+    t({
+      "')",
+      "plt.ylabel('",
+    }),
+    i(4, "Y"),
+    t({
+      "')",
+      "plt.grid(True)",
+      "plt.show()"
+    })
+  }),
+  
+  -- Class definition
+  s("class", {
+    t("class "),
+    i(1, "ClassName"),
+    t({
+      ":",
+      "    def __init__(self"
+    }),
+    i(2, ""),
+    t({
+      "):",
+      "        "
+    }),
+    i(3, "pass"),
+  }),
+  
+  -- Try-except
+  s("try", {
+    t({
+      "try:",
+      "    "
+    }),
+    i(1, "# code"),
+    t({
+      "",
+      "except ",
+    }),
+    i(2, "Exception"),
+    t({
+      " as e:",
+      "    "
+    }),
+    i(3, "print(f'Error: {e}')"),
+  }),
+  
+  -- Type hints
+  s("typing", {
+    t("from typing import "),
+    i(1, "List, Dict, Optional, Union"),
+  }),
+  
+  -- Dataclass
+  s("dataclass", {
+    t({
+      "from dataclasses import dataclass",
+      "",
+      "@dataclass",
+      "class ",
+    }),
+    i(1, "DataClass"),
+    t({
+      ":",
+      "    "
+    }),
+    i(2, "field: type"),
+  }),
+})
        ls.add_snippets("typescriptreact", {
       s("rfc", {
           t({"import React from 'react';", "", "interface Props {", "  "}),

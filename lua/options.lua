@@ -1,4 +1,7 @@
-require "nvchad.options"
+-- Try to load nvchad default options if available; don't error if it's missing
+pcall(function()
+	require("nvchad.options")
+end)
 
 -- Enhanced options inspired by craftzdog's setup
 local opt = vim.opt
